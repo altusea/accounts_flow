@@ -36,10 +36,10 @@ dependencies:
   cupertino_icons: ^1.0.8
 
   # For charts and data visualization
-  fl_chart: ^0.66.2
+  fl_chart: ^1.1.1
 
   # For date formatting
-  intl: ^0.19.0
+  intl: ^0.20.2
 
   # For local data persistence
   shared_preferences: ^2.4.1

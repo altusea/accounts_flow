@@ -81,3 +81,5 @@ This is a Flutter personal finance tracking application called "accounts_flow" t
 - Follows Material Design 3 patterns
 - Implements proper state management with `setState`
 - Uses async/await for data operations
+- All comments are clear and concise
+- code comments are written in Chinese

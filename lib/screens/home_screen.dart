@@ -6,6 +6,7 @@ import '../widgets/account_card.dart';
 import '../widgets/add_account_dialog.dart';
 import '../widgets/add_transaction_dialog.dart';
 import 'account_detail_screen.dart';
+import 'history_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,14 +15,22 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   List<Account> _accounts = [];
   List<Transaction> _recentTransactions = [];
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -79,6 +88,13 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('记账应用'),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: [
+            Tab(icon: Icon(Icons.dashboard), text: '概览'),
+            Tab(icon: Icon(Icons.history), text: '历史'),
+          ],
+        ),
         actions: [
           IconButton(
             icon: Icon(Icons.refresh),
@@ -86,29 +102,44 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: _buildBody(),
-      floatingActionButton: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
+      body: TabBarView(
+        controller: _tabController,
         children: [
-          FloatingActionButton.small(
-            heroTag: 'add_transaction',
-            onPressed: _showAddTransactionDialog,
-            child: Icon(Icons.add),
-            tooltip: '添加交易',
-          ),
-          SizedBox(height: 8),
-          FloatingActionButton(
-            heroTag: 'add_account',
-            onPressed: _showAddAccountDialog,
-            child: Icon(Icons.account_balance_wallet),
-            tooltip: '添加账户',
-          ),
+          _buildOverviewTab(),
+          HistoryScreen(),
         ],
       ),
+      floatingActionButton: _buildFloatingActionButton(),
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildFloatingActionButton() {
+    // 只在概览tab显示FAB
+    if (_tabController.index != 0) {
+      return Container();
+    }
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        FloatingActionButton.small(
+          heroTag: 'add_transaction',
+          onPressed: _showAddTransactionDialog,
+          child: Icon(Icons.add),
+          tooltip: '添加交易',
+        ),
+        SizedBox(height: 8),
+        FloatingActionButton(
+          heroTag: 'add_account',
+          onPressed: _showAddAccountDialog,
+          child: Icon(Icons.account_balance_wallet),
+          tooltip: '添加账户',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOverviewTab() {
     if (_accounts.isEmpty) {
       return Center(
         child: Column(

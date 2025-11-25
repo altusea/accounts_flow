@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'services/data_service.dart';
 import 'screens/home_screen.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 在应用启动时检查是否需要记录本周余额
+  DataService.recordWeeklyBalances();
+
   runApp(const MyApp());
 }
 

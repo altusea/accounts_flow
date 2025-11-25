@@ -20,6 +20,11 @@ This is a Flutter personal finance tracking application called "accounts_flow" t
 - `flutter build ios` - Build for iOS
 - `flutter build macos` - Build for macOS
 
+### macOS Build Scripts
+- `./build_macos.sh --help` - Full-featured build script with options
+- `./build_macos.sh --all` - Complete build process (clean -> build -> package)
+- See BUILD.md for detailed usage instructions
+
 ## Architecture
 
 ### Data Models

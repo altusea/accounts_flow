@@ -130,6 +130,10 @@ This is a Flutter personal finance tracking application called "accounts_flow" t
   - JSON serialization/deserialization for all data models
 
 ### UI Architecture
+- **Platform-specific UI Design**:
+  - **Mobile/Web**: Material Design 3 components with Material navigation
+  - **macOS**: Cupertino (iOS-style) widgets with native macOS navigation patterns
+
 - **Screens**:
   - `HomeScreen` (`lib/screens/home_screen.dart`): Main dashboard with total balance, account list, and recent transactions
   - `AccountDetailScreen` (`lib/screens/account_detail_screen.dart`): Individual account view with charts and transaction history
@@ -266,7 +270,8 @@ The project includes sophisticated build scripts for production deployments:
 - **Bundle IDs**: Configured per platform in respective build files
 
 ### Theme and Design
-- Material Design 3 theme implementation
+- **Platform-specific design**: Material Design 3 for mobile/web, Cupertino (iOS-style) for macOS
+- **macOS UI**: Uses Cupertino widgets and navigation patterns for native macOS experience
 - Custom color scheme for financial data visualization
 - Responsive layout adapted for multiple screen sizes
 - Dark/light theme support (if implemented)

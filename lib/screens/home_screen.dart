@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/account.dart';
-import '../models/transaction.dart';
 import '../services/data_service.dart';
 import '../widgets/account_card.dart';
 import '../widgets/add_account_dialog.dart';
-import '../widgets/add_transaction_dialog.dart';
 import 'account_detail_screen.dart';
 import 'history_screen.dart';
 
@@ -17,7 +15,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   List<Account> _accounts = [];
-  List<Transaction> _recentTransactions = [];
   late TabController _tabController;
 
   @override
@@ -35,15 +32,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   Future<void> _loadData() async {
     final accounts = await DataService.getAccounts();
-    final transactions = await DataService.getTransactions();
-
-    // 获取最新的5笔交易
-    transactions.sort((a, b) => b.date.compareTo(a.date));
-    final recent = transactions.take(5).toList();
 
     setState(() {
       _accounts = accounts;
-      _recentTransactions = recent;
     });
   }
 
@@ -63,25 +54,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-  void _showAddTransactionDialog() {
-    if (_accounts.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('请先添加账户')),
-      );
-      return;
-    }
-
-    showDialog(
-      context: context,
-      builder: (context) => AddTransactionDialog(
-        accounts: _accounts,
-        onTransactionAdded: (transaction) async {
-          await DataService.addTransaction(transaction);
-          _loadData();
-        },
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -119,23 +91,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       return Container();
     }
 
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        FloatingActionButton.small(
-          heroTag: 'add_transaction',
-          onPressed: _showAddTransactionDialog,
-          child: Icon(Icons.add),
-          tooltip: '添加交易',
-        ),
-        SizedBox(height: 8),
-        FloatingActionButton(
-          heroTag: 'add_account',
-          onPressed: _showAddAccountDialog,
-          child: Icon(Icons.account_balance_wallet),
-          tooltip: '添加账户',
-        ),
-      ],
+    return FloatingActionButton(
+      heroTag: 'add_account',
+      onPressed: _showAddAccountDialog,
+      child: Icon(Icons.account_balance_wallet),
+      tooltip: '添加账户',
     );
   }
 
@@ -186,7 +146,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   ),
                   SizedBox(height: 8),
                   Text(
-                    '¥${_totalBalance.toStringAsFixed(2)}',
+                    '${_totalBalance.toStringAsFixed(2)}元',
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
@@ -219,64 +179,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 ),
               )),
 
-          // 最近交易
-          if (_recentTransactions.isNotEmpty) ...[
-            Padding(
-              padding: EdgeInsets.fromLTRB(16, 24, 16, 8),
-              child: Text(
-                '最近交易',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            ..._recentTransactions.map((transaction) {
-              final account = _accounts.firstWhere(
-                (acc) => acc.id == transaction.accountId,
-                orElse: () => Account(
-                  id: '',
-                  name: '未知账户',
-                  type: AccountType.bankCard,
-                  balance: 0,
-                  color: Colors.grey,
-                  createdAt: DateTime.now(),
-                ),
-              );
-
-              return Card(
-                margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                child: ListTile(
-                  leading: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: account.color.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Icon(
-                      account.typeIcon,
-                      color: account.color,
-                      size: 20,
-                    ),
-                  ),
-                  title: Text(transaction.description),
-                  subtitle: Text(
-                    '${transaction.formattedDate} ${transaction.typeName}',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                  trailing: Text(
-                    transaction.formattedAmount,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: transaction.typeColor,
-                    ),
-                  ),
-                ),
-              );
-            }),
-          ],
         ],
       ),
     );

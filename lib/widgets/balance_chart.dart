@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../models/account.dart';
-import '../models/transaction.dart';
+import '../models/balance_history.dart';
 import '../services/data_service.dart';
 
 class BalanceChart extends StatefulWidget {
@@ -15,7 +15,7 @@ class BalanceChart extends StatefulWidget {
 }
 
 class _BalanceChartState extends State<BalanceChart> {
-  List<Transaction> _transactions = [];
+  List<BalanceHistory> _balanceHistory = [];
   Account? _account;
 
   @override
@@ -27,43 +27,27 @@ class _BalanceChartState extends State<BalanceChart> {
   Future<void> _loadData() async {
     final accounts = await DataService.getAccounts();
     final account = accounts.firstWhere((acc) => acc.id == widget.accountId);
-    final transactions = await DataService.getTransactionsByAccount(widget.accountId);
+    final history = await DataService.getBalanceHistoryByAccount(widget.accountId);
 
     setState(() {
       _account = account;
-      _transactions = transactions;
+      _balanceHistory = history;
     });
   }
 
   List<FlSpot> _getChartData() {
-    if (_transactions.isEmpty) return [];
+    if (_balanceHistory.isEmpty) return [];
 
-    // 按日期分组交易
+    // 按日期分组余额历史
     final Map<String, double> dailyBalances = {};
-    double runningBalance = 0.0;
 
-    // 按日期排序交易
-    final sortedTransactions = List<Transaction>.from(_transactions)
-      ..sort((a, b) => a.date.compareTo(b.date));
+    // 按日期排序余额历史
+    final sortedHistory = List<BalanceHistory>.from(_balanceHistory)
+      ..sort((a, b) => a.recordDate.compareTo(b.recordDate));
 
-    for (final transaction in sortedTransactions) {
-      final dateKey = DateFormat('MM-dd').format(transaction.date);
-
-      if (transaction.accountId == widget.accountId) {
-        if (transaction.type == TransactionType.income) {
-          runningBalance += transaction.amount;
-        } else if (transaction.type == TransactionType.expense) {
-          runningBalance -= transaction.amount;
-        } else if (transaction.type == TransactionType.transfer) {
-          runningBalance -= transaction.amount;
-        }
-      } else if (transaction.targetAccountId == widget.accountId) {
-        if (transaction.type == TransactionType.transfer) {
-          runningBalance += transaction.amount;
-        }
-      }
-
-      dailyBalances[dateKey] = runningBalance;
+    for (final history in sortedHistory) {
+      final dateKey = DateFormat('MM-dd').format(history.recordDate);
+      dailyBalances[dateKey] = history.balance;
     }
 
     // 转换为FlSpot格式
@@ -91,7 +75,7 @@ class _BalanceChartState extends State<BalanceChart> {
         height: 200,
         child: Center(
           child: Text(
-            '暂无交易数据',
+            '暂无余额历史数据',
             style: TextStyle(color: Colors.grey),
           ),
         ),
@@ -124,7 +108,7 @@ class _BalanceChartState extends State<BalanceChart> {
                 reservedSize: 40,
                 getTitlesWidget: (value, meta) {
                   return Text(
-                    '¥${value.toInt()}',
+                    '${value.toInt()}元',
                     style: TextStyle(fontSize: 10),
                   );
                 },

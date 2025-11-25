@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/account.dart';
 import '../services/data_service.dart';
+import '../widgets/add_balance_dialog.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -61,6 +62,23 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
   }
 
+  void _showAddBalanceDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AddBalanceDialog(
+        onBalanceAdded: (history) async {
+          await DataService.addBalanceHistory(history);
+          await _loadData();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('余额记录已保存')),
+            );
+          }
+        },
+      ),
+    );
+  }
+
   double get _totalBalanceForSelectedDate {
     return _selectedDateBalances.values.fold(0.0, (sum, balance) => sum + balance);
   }
@@ -71,6 +89,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
       appBar: AppBar(
         title: Text('历史余额'),
         actions: [
+          IconButton(
+            icon: Icon(Icons.add),
+            onPressed: _showAddBalanceDialog,
+            tooltip: '手动记录余额',
+          ),
           IconButton(
             icon: Icon(Icons.refresh),
             onPressed: _loadData,
@@ -185,7 +208,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    '¥${_totalBalanceForSelectedDate.toStringAsFixed(2)}',
+                    '${_totalBalanceForSelectedDate.toStringAsFixed(2)}元',
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
@@ -233,7 +256,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       style: TextStyle(color: Colors.grey),
                     ),
                     trailing: Text(
-                      '¥${balance.toStringAsFixed(2)}',
+                      '${balance.toStringAsFixed(2)}元',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,

@@ -42,7 +42,7 @@ class AccountCard extends StatelessWidget {
           style: TextStyle(color: Colors.grey),
         ),
         trailing: Text(
-          '¥${account.balance.toStringAsFixed(2)}',
+          '${account.balance.toStringAsFixed(2)}元',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,

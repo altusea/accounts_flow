@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/account.dart';
 import '../services/data_service.dart';
+import '../utils/logger.dart';
 import '../widgets/account_card.dart';
 import '../widgets/add_account_dialog.dart';
 import 'account_detail_screen.dart';
@@ -20,8 +21,17 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
+    AppLogger.ui('HomeScreen 初始化');
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(_onTabChanged);
     _loadData();
+  }
+
+  void _onTabChanged() {
+    if (_tabController.indexIsChanging) {
+      final tabNames = ['概览', '历史'];
+      AppLogger.ui('切换到 ${tabNames[_tabController.index]} 标签页');
+    }
   }
 
   @override
@@ -31,11 +41,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Future<void> _loadData() async {
-    final accounts = await DataService.getAccounts();
+    AppLogger.ui('开始加载账户数据');
+    try {
+      final accounts = await DataService.getAccounts();
 
-    setState(() {
-      _accounts = accounts;
-    });
+      setState(() {
+        _accounts = accounts;
+      });
+      AppLogger.ui('成功加载 ${accounts.length} 个账户');
+    } catch (e, stackTrace) {
+      AppLogger.error('加载账户数据失败', e, stackTrace);
+      rethrow;
+    }
   }
 
   double get _totalBalance {
@@ -43,12 +60,20 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   void _showAddAccountDialog() {
+    AppLogger.ui('打开添加账户对话框');
     showDialog(
       context: context,
       builder: (context) => AddAccountDialog(
         onAccountAdded: (account) async {
-          await DataService.addAccount(account);
-          _loadData();
+          AppLogger.ui('开始添加账户: ${account.name}');
+          try {
+            await DataService.addAccount(account);
+            AppLogger.ui('成功添加账户: ${account.name}');
+            _loadData();
+          } catch (e, stackTrace) {
+            AppLogger.error('添加账户失败: ${account.name}', e, stackTrace);
+            rethrow;
+          }
         },
       ),
     );
@@ -70,7 +95,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         actions: [
           IconButton(
             icon: Icon(Icons.refresh),
-            onPressed: _loadData,
+            onPressed: () {
+              AppLogger.ui('手动刷新账户数据');
+              _loadData();
+            },
           ),
         ],
       ),
@@ -171,12 +199,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ),
           ..._accounts.map((account) => AccountCard(
                 account: account,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AccountDetailScreen(account: account),
-                  ),
-                ),
+                onTap: () {
+                  AppLogger.ui('导航到账户详情: ${account.name}');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AccountDetailScreen(account: account),
+                    ),
+                  );
+                },
               )),
 
         ],

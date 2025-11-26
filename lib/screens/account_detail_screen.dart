@@ -14,6 +14,7 @@ class AccountDetailScreen extends StatefulWidget {
 
 class _AccountDetailScreenState extends State<AccountDetailScreen> {
   List<Account> _allAccounts = [];
+  double _currentBalance = 0.0;
 
   @override
   void initState() {
@@ -23,9 +24,11 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
 
   Future<void> _loadData() async {
     final accounts = await DataService.getAccounts();
+    final latestBalance = await DataService.getLatestBalanceForAccount(widget.account.id);
 
     setState(() {
       _allAccounts = accounts;
+      _currentBalance = latestBalance;
     });
   }
 
@@ -90,11 +93,11 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
                         ),
                         SizedBox(height: 8),
                         Text(
-                          '${widget.account.balance.toStringAsFixed(2)}元',
+                          '${_currentBalance.toStringAsFixed(2)}元',
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: widget.account.balance >= 0 ? Colors.green : Colors.red,
+                            color: _currentBalance >= 0 ? Colors.green : Colors.red,
                           ),
                         ),
                       ],

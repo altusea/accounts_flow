@@ -13,7 +13,6 @@ class Account {
   final String id;
   final String name;
   final AccountType type;
-  final double balance;
   final Color color;
   final String? icon;
   final DateTime createdAt;
@@ -22,7 +21,6 @@ class Account {
     required this.id,
     required this.name,
     required this.type,
-    required this.balance,
     required this.color,
     this.icon,
     required this.createdAt,
@@ -32,7 +30,6 @@ class Account {
     String? id,
     String? name,
     AccountType? type,
-    double? balance,
     Color? color,
     String? icon,
     DateTime? createdAt,
@@ -41,7 +38,6 @@ class Account {
       id: id ?? this.id,
       name: name ?? this.name,
       type: type ?? this.type,
-      balance: balance ?? this.balance,
       color: color ?? this.color,
       icon: icon ?? this.icon,
       createdAt: createdAt ?? this.createdAt,
@@ -53,7 +49,6 @@ class Account {
       'id': id,
       'name': name,
       'type': type.index,
-      'balance': balance,
       'color': color.alpha << 24 | color.red << 16 | color.green << 8 | color.blue,
       'icon': icon,
       'createdAt': createdAt.toIso8601String(),
@@ -65,7 +60,6 @@ class Account {
       id: json['id'],
       name: json['name'],
       type: AccountType.values[json['type']],
-      balance: (json['balance'] as num).toDouble(),
       color: Color(json['color']),
       icon: json['icon'],
       createdAt: DateTime.parse(json['createdAt']),

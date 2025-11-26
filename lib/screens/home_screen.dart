@@ -16,6 +16,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   List<Account> _accounts = [];
+  Map<String, double> _accountBalances = {}; // accountId -> latest balance
   late TabController _tabController;
 
   @override
@@ -43,10 +44,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Future<void> _loadData() async {
     AppLogger.ui('开始加载账户数据');
     try {
-      final accounts = await DataService.getAccounts();
+      final accounts = await DataService.getOrderedAccounts();
+      final balances = <String, double>{};
+
+      // 为每个账户获取最新余额
+      for (final account in accounts) {
+        final latestBalance = await DataService.getLatestBalanceForAccount(account.id);
+        balances[account.id] = latestBalance;
+      }
 
       setState(() {
         _accounts = accounts;
+        _accountBalances = balances;
       });
       AppLogger.ui('成功加载 ${accounts.length} 个账户');
     } catch (e, stackTrace) {
@@ -56,7 +65,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   double get _totalBalance {
-    return _accounts.fold(0.0, (sum, account) => sum + account.balance);
+    return _accounts.fold(0.0, (sum, account) => sum + (_accountBalances[account.id] ?? 0.0));
   }
 
 
@@ -169,6 +178,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ),
           ..._accounts.map((account) => AccountCard(
                 account: account,
+                balance: _accountBalances[account.id] ?? 0.0,
                 onTap: () {
                   AppLogger.ui('导航到账户详情: ${account.name}');
                   Navigator.push(

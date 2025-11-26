@@ -4,7 +4,9 @@
       "Bash(.build_windows.ps1:*)",
       "Bash(./build_macos.sh:*)",
       "Bash(pod install:*)",
-      "Bash(flutter build:*)"
+      "Bash(flutter build:*)",
+      "Bash(flutter analyze:*)",
+      "Bash(flutter run:*)"
     ],
     "deny": [],
     "ask": []

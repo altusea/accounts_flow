@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/account.dart';
 
 class AddAccountDialog extends StatefulWidget {
-  final Function(Account) onAccountAdded;
+  final Function(Account, double) onAccountAdded;
 
   const AddAccountDialog({super.key, required this.onAccountAdded});
 
@@ -147,12 +147,12 @@ class _AddAccountDialogState extends State<AddAccountDialog> {
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         name: _nameController.text,
         type: _selectedType,
-        balance: double.parse(_balanceController.text),
         color: _selectedColor,
         createdAt: DateTime.now(),
       );
 
-      widget.onAccountAdded(account);
+      final initialBalance = double.parse(_balanceController.text);
+      widget.onAccountAdded(account, initialBalance);
       Navigator.of(context).pop();
     }
   }

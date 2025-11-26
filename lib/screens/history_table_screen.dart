@@ -32,7 +32,7 @@ class _HistoryTableScreenState extends State<HistoryTableScreen> {
     });
 
     try {
-      final accounts = await DataService.getAccounts();
+      final accounts = await DataService.getOrderedAccounts();
       final dates = await DataService.getRecordedDates();
       final allHistory = await DataService.getBalanceHistory();
 
@@ -223,6 +223,18 @@ class _HistoryTableScreenState extends State<HistoryTableScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 使用说明
+            Container(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                '提示：点击任意单元格可以编辑余额',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
             // 表头
             _buildTableHeader(),
             // 数据行
@@ -346,21 +358,24 @@ class _HistoryTableScreenState extends State<HistoryTableScreen> {
               final balance = _getCellBalance(account.id, date);
               return GestureDetector(
                 onTap: () => _editCell(account.id, date, balance),
-                child: Container(
-                  width: 100,
-                  padding: EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    border: Border(left: BorderSide(color: Colors.grey[200]!)),
-                    color: Colors.white,
-                  ),
-                  child: Text(
-                    balance == 0 ? '-' : balance.toStringAsFixed(2),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: balance >= 0 ? Colors.green : Colors.red,
-                      fontWeight: FontWeight.w500,
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: Container(
+                    width: 100,
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      border: Border(left: BorderSide(color: Colors.grey[200]!)),
+                      color: Colors.white,
                     ),
-                    textAlign: TextAlign.center,
+                    child: Text(
+                      balance.toStringAsFixed(2),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: balance >= 0 ? Colors.green : Colors.red,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 ),
               );

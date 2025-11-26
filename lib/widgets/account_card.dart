@@ -3,11 +3,13 @@ import '../models/account.dart';
 
 class AccountCard extends StatelessWidget {
   final Account account;
+  final double balance;
   final VoidCallback? onTap;
 
   const AccountCard({
     super.key,
     required this.account,
+    required this.balance,
     this.onTap,
   });
 
@@ -42,11 +44,11 @@ class AccountCard extends StatelessWidget {
           style: TextStyle(color: Colors.grey),
         ),
         trailing: Text(
-          '${account.balance.toStringAsFixed(2)}元',
+          '${balance.toStringAsFixed(2)}元',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: account.balance >= 0 ? Colors.green : Colors.red,
+            color: balance >= 0 ? Colors.green : Colors.red,
           ),
         ),
         onTap: onTap,

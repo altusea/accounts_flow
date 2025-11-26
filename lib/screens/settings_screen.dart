@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/account.dart';
+import '../models/balance_history.dart';
 import '../services/data_service.dart';
 import '../utils/logger.dart';
 import '../widgets/add_account_dialog.dart';
@@ -14,6 +15,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   List<Account> _accounts = [];
   List<String> _accountOrder = [];
+  Map<String, double> _accountBalances = {}; // accountId -> latest balance
   bool _isLoading = true;
 
   @override
@@ -38,9 +40,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ? storedOrder
           : accounts.map((account) => account.id).toList();
 
+      // 为每个账户获取最新余额
+      final balances = <String, double>{};
+      for (final account in accounts) {
+        final latestBalance = await DataService.getLatestBalanceForAccount(account.id);
+        balances[account.id] = latestBalance;
+      }
+
       setState(() {
         _accounts = accounts;
         _accountOrder = accountOrder;
+        _accountBalances = balances;
         _isLoading = false;
       });
 
@@ -52,16 +62,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<List<String>> _getStoredAccountOrder() async {
-    // 这里可以从 SharedPreferences 或其他存储中获取账户顺序
-    // 暂时返回空列表，表示使用默认顺序
-    return [];
+    return await DataService.getAccountOrder();
   }
 
   Future<void> _saveAccountOrder(List<String> order) async {
     AppLogger.ui('保存账户顺序: ${order.length} 个账户');
     try {
-      // 这里可以将账户顺序保存到 SharedPreferences 或其他存储中
-      // 暂时只更新内存中的顺序
+      await DataService.saveAccountOrder(order);
       setState(() {
         _accountOrder = order;
       });
@@ -77,16 +84,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (context) => AddAccountDialog(
-        onAccountAdded: (account) async {
+        onAccountAdded: (account, initialBalance) async {
           AppLogger.ui('开始添加账户: ${account.name}');
           try {
             await DataService.addAccount(account);
             AppLogger.ui('成功添加账户: ${account.name}');
 
-            // 将新账户添加到顺序列表的末尾
-            setState(() {
-              _accountOrder.add(account.id);
-            });
+            // 创建初始余额历史记录
+            final history = BalanceHistory(
+              id: '${account.id}_${DateTime.now().millisecondsSinceEpoch}',
+              accountId: account.id,
+              balance: initialBalance,
+              recordDate: DateTime.now(),
+              createdAt: DateTime.now(),
+            );
+            await DataService.addBalanceHistory(history);
+
+            // 将新账户添加到顺序列表的末尾并保存
+            final newOrder = List<String>.from(_accountOrder)..add(account.id);
+            await _saveAccountOrder(newOrder);
 
             await _loadData();
 
@@ -340,11 +356,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '${account.balance.toStringAsFixed(2)}元',
+              '${_accountBalances[account.id]?.toStringAsFixed(2) ?? '0.00'}元',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
-                color: account.balance >= 0 ? Colors.green : Colors.red,
+                color: (_accountBalances[account.id] ?? 0.0) >= 0 ? Colors.green : Colors.red,
               ),
             ),
             SizedBox(width: 16),
@@ -367,7 +383,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     AppLogger.ui('打开编辑账户对话框: ${account.name}');
 
     final nameController = TextEditingController(text: account.name);
-    final balanceController = TextEditingController(text: account.balance.toStringAsFixed(2));
+    final balanceController = TextEditingController(text: _accountBalances[account.id]?.toStringAsFixed(2) ?? '0.00');
 
     showDialog(
       context: context,
@@ -410,13 +426,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   id: account.id,
                   name: newName,
                   type: account.type,
-                  balance: newBalance,
                   color: account.color,
                   createdAt: account.createdAt,
                 );
 
                 try {
+                  // 更新账户信息
                   await DataService.updateAccount(updatedAccount);
+
+                  // 如果余额有变化，创建新的余额历史记录
+                  final currentBalance = _accountBalances[account.id] ?? 0.0;
+                  if (newBalance != currentBalance) {
+                    final history = BalanceHistory(
+                      id: '${account.id}_${DateTime.now().millisecondsSinceEpoch}',
+                      accountId: account.id,
+                      balance: newBalance,
+                      recordDate: DateTime.now(),
+                      createdAt: DateTime.now(),
+                    );
+                    await DataService.addBalanceHistory(history);
+                  }
+
                   await _loadData();
 
                   if (mounted) {

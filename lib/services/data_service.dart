@@ -21,7 +21,6 @@ class DataService {
           id: maps[i]['id'],
           name: maps[i]['name'],
           type: AccountType.values[maps[i]['type']],
-          balance: maps[i]['balance'],
           color: Color(maps[i]['color']),
           createdAt: DateTime.fromMillisecondsSinceEpoch(maps[i]['createdAt']),
         );
@@ -51,7 +50,6 @@ class DataService {
             'id': account.id,
             'name': account.name,
             'type': account.type.index,
-            'balance': account.balance,
             'color': account.color.value,
             'createdAt': account.createdAt.millisecondsSinceEpoch,
           });
@@ -72,7 +70,6 @@ class DataService {
         'id': account.id,
         'name': account.name,
         'type': account.type.index,
-        'balance': account.balance,
         'color': account.color.value,
         'createdAt': account.createdAt.millisecondsSinceEpoch,
       });
@@ -92,7 +89,6 @@ class DataService {
         {
           'name': updatedAccount.name,
           'type': updatedAccount.type.index,
-          'balance': updatedAccount.balance,
           'color': updatedAccount.color.value,
         },
         where: 'id = ?',
@@ -117,6 +113,92 @@ class DataService {
       AppLogger.db('成功删除账户: $accountId');
     } catch (e, stackTrace) {
       AppLogger.error('删除账户失败: $accountId', e, stackTrace);
+      rethrow;
+    }
+  }
+
+  // 账户顺序相关方法
+  static Future<List<String>> getAccountOrder() async {
+    AppLogger.db('开始获取账户顺序');
+    try {
+      final db = await _dbHelper.database;
+      final List<Map<String, dynamic>> maps = await db.query(
+        'account_order',
+        orderBy: 'position ASC',
+      );
+
+      final accountOrder = maps.map((map) => map['accountId'] as String).toList();
+      AppLogger.db('成功获取账户顺序: ${accountOrder.length} 个账户');
+      return accountOrder;
+    } catch (e, stackTrace) {
+      AppLogger.error('获取账户顺序失败', e, stackTrace);
+      // 如果表不存在，返回空列表
+      return [];
+    }
+  }
+
+  static Future<void> saveAccountOrder(List<String> accountOrder) async {
+    AppLogger.db('开始保存账户顺序: ${accountOrder.length} 个账户');
+    try {
+      final db = await _dbHelper.database;
+
+      await db.transaction((txn) async {
+        // 清空表
+        await txn.delete('account_order');
+
+        // 批量插入
+        for (int i = 0; i < accountOrder.length; i++) {
+          await txn.insert('account_order', {
+            'accountId': accountOrder[i],
+            'position': i,
+          });
+        }
+      });
+
+      AppLogger.db('成功保存账户顺序');
+    } catch (e, stackTrace) {
+      AppLogger.error('保存账户顺序失败', e, stackTrace);
+      rethrow;
+    }
+  }
+
+  static Future<List<Account>> getOrderedAccounts() async {
+    AppLogger.db('开始获取有序账户列表');
+    try {
+      final accounts = await getAccounts();
+      final accountOrder = await getAccountOrder();
+
+      // 如果没有保存的顺序，使用默认顺序
+      if (accountOrder.isEmpty) {
+        AppLogger.db('使用默认账户顺序');
+        return accounts;
+      }
+
+      // 构建账户映射
+      final accountMap = <String, Account>{};
+      for (final account in accounts) {
+        accountMap[account.id] = account;
+      }
+
+      // 按保存的顺序构建有序列表
+      final orderedAccounts = <Account>[];
+      for (final accountId in accountOrder) {
+        if (accountMap.containsKey(accountId)) {
+          orderedAccounts.add(accountMap[accountId]!);
+        }
+      }
+
+      // 添加不在顺序列表中的账户（新添加的账户）
+      for (final account in accounts) {
+        if (!accountOrder.contains(account.id)) {
+          orderedAccounts.add(account);
+        }
+      }
+
+      AppLogger.db('成功获取有序账户列表: ${orderedAccounts.length} 个账户');
+      return orderedAccounts;
+    } catch (e, stackTrace) {
+      AppLogger.error('获取有序账户列表失败', e, stackTrace);
       rethrow;
     }
   }
@@ -293,10 +375,12 @@ class DataService {
 
       // 为每个账户记录当前余额
       for (final account in accounts) {
+        // 获取账户的最新余额（从历史记录中获取）
+        final latestBalance = await getLatestBalanceForAccount(account.id);
         final history = BalanceHistory(
           id: '${account.id}_${today.millisecondsSinceEpoch}',
           accountId: account.id,
-          balance: account.balance,
+          balance: latestBalance,
           recordDate: today,
           createdAt: today,
         );
@@ -307,6 +391,20 @@ class DataService {
     } catch (e, stackTrace) {
       AppLogger.error('记录本周余额失败', e, stackTrace);
       rethrow;
+    }
+  }
+
+  static Future<double> getLatestBalanceForAccount(String accountId) async {
+    try {
+      final history = await getBalanceHistoryByAccount(accountId);
+      if (history.isEmpty) {
+        return 0.0;
+      }
+      // 返回最新的余额记录
+      return history.last.balance;
+    } catch (e) {
+      AppLogger.error('获取账户 $accountId 的最新余额失败', e);
+      return 0.0;
     }
   }
 

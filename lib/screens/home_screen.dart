@@ -3,9 +3,9 @@ import '../models/account.dart';
 import '../services/data_service.dart';
 import '../utils/logger.dart';
 import '../widgets/account_card.dart';
-import '../widgets/add_account_dialog.dart';
 import 'account_detail_screen.dart';
-import 'history_screen.dart';
+import 'history_table_screen.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -22,14 +22,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   void initState() {
     super.initState();
     AppLogger.ui('HomeScreen 初始化');
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(_onTabChanged);
     _loadData();
   }
 
   void _onTabChanged() {
     if (_tabController.indexIsChanging) {
-      final tabNames = ['概览', '历史'];
+      final tabNames = ['概览', '表格', '设置'];
       AppLogger.ui('切换到 ${tabNames[_tabController.index]} 标签页');
     }
   }
@@ -59,25 +59,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return _accounts.fold(0.0, (sum, account) => sum + account.balance);
   }
 
-  void _showAddAccountDialog() {
-    AppLogger.ui('打开添加账户对话框');
-    showDialog(
-      context: context,
-      builder: (context) => AddAccountDialog(
-        onAccountAdded: (account) async {
-          AppLogger.ui('开始添加账户: ${account.name}');
-          try {
-            await DataService.addAccount(account);
-            AppLogger.ui('成功添加账户: ${account.name}');
-            _loadData();
-          } catch (e, stackTrace) {
-            AppLogger.error('添加账户失败: ${account.name}', e, stackTrace);
-            rethrow;
-          }
-        },
-      ),
-    );
-  }
 
 
   @override
@@ -89,7 +70,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           controller: _tabController,
           tabs: [
             Tab(icon: Icon(Icons.dashboard), text: '概览'),
-            Tab(icon: Icon(Icons.history), text: '历史'),
+            Tab(icon: Icon(Icons.table_chart), text: '表格'),
+            Tab(icon: Icon(Icons.settings), text: '设置'),
           ],
         ),
         actions: [
@@ -106,26 +88,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         controller: _tabController,
         children: [
           _buildOverviewTab(),
-          HistoryScreen(),
+          HistoryTableScreen(),
+          SettingsScreen(),
         ],
       ),
-      floatingActionButton: _buildFloatingActionButton(),
+      floatingActionButton: Container(),
     );
   }
 
-  Widget _buildFloatingActionButton() {
-    // 只在概览tab显示FAB
-    if (_tabController.index != 0) {
-      return Container();
-    }
-
-    return FloatingActionButton(
-      heroTag: 'add_account',
-      onPressed: _showAddAccountDialog,
-      child: Icon(Icons.account_balance_wallet),
-      tooltip: '添加账户',
-    );
-  }
 
   Widget _buildOverviewTab() {
     if (_accounts.isEmpty) {
@@ -145,7 +115,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ),
             SizedBox(height: 8),
             Text(
-              '点击右下角按钮添加第一个账户',
+              '请到设置页面添加第一个账户',
               style: TextStyle(color: Colors.grey),
             ),
           ],

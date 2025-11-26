@@ -386,24 +386,6 @@ class DataService {
     }
   }
 
-  static Future<void> recordWeeklyBalances() async {
-    AppLogger.business('开始检查是否需要记录本周余额');
-    try {
-      final today = DateTime.now();
-
-      // 只在周六记录
-      if (today.weekday != DateTime.saturday) {
-        AppLogger.business('今天不是周六，跳过余额记录');
-        return;
-      }
-
-      await recordBalancesForDate(today);
-    } catch (e, stackTrace) {
-      AppLogger.error('记录本周余额失败', e, stackTrace);
-      rethrow;
-    }
-  }
-
   static Future<double> getLatestBalanceForAccount(String accountId) async {
     try {
       final history = await getBalanceHistoryByAccount(accountId);

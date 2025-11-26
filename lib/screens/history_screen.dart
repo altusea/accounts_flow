@@ -70,18 +70,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Future<void> _recordCurrentBalances() async {
-    AppLogger.ui('开始记录本周余额');
+    AppLogger.ui('开始记录当前余额');
     try {
-      await DataService.recordWeeklyBalances();
+      await DataService.recordBalancesForDate(DateTime.now());
       await _loadData();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('已记录当前账户余额')),
         );
       }
-      AppLogger.ui('成功记录本周余额');
+      AppLogger.ui('成功记录当前余额');
     } catch (e, stackTrace) {
-      AppLogger.error('记录本周余额失败', e, stackTrace);
+      AppLogger.error('记录当前余额失败', e, stackTrace);
       rethrow;
     }
   }
@@ -136,15 +136,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
               _loadData();
             },
           ),
-          if (DateTime.now().weekday == DateTime.saturday)
-            IconButton(
-              icon: Icon(Icons.save),
-              onPressed: () {
-                AppLogger.ui('点击记录本周余额按钮');
-                _recordCurrentBalances();
-              },
-              tooltip: '记录本周余额',
-            ),
+          IconButton(
+            icon: Icon(Icons.save),
+            onPressed: () {
+              AppLogger.ui('点击记录当前余额按钮');
+              _recordCurrentBalances();
+            },
+            tooltip: '记录当前余额',
+          ),
         ],
       ),
       body: _isLoading
@@ -171,19 +170,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ),
             SizedBox(height: 8),
             Text(
-              '每周六会自动记录账户余额',
+              '可以手动记录账户余额',
               style: TextStyle(color: Colors.grey),
             ),
-            if (DateTime.now().weekday == DateTime.saturday) ...[
-              SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  AppLogger.ui('点击空状态记录本周余额按钮');
-                  _recordCurrentBalances();
-                },
-                child: Text('记录本周余额'),
-              ),
-            ],
           ],
         ),
       );

@@ -170,11 +170,10 @@ This is a Flutter personal finance tracking application called "accounts_flow" t
 1. **App Initialization**:
    - Database setup via `DatabaseHelper`
    - Logging system initialization via `AppLogger`
-   - Automatic weekly balance recording via `DataService.recordWeeklyBalances()`
 
 2. **Account Management**: Users create accounts through `AddAccountDialog` with initial balances
 3. **Transaction Recording**: Users add transactions through `AddTransactionDialog` (income/expense/transfer)
-4. **Automatic Balance Tracking**: `DataService.recordWeeklyBalances()` runs at app startup to record Saturday balances
+4. **Manual Balance Recording**: Users can manually record balances for any date via `DataService.recordBalancesForDate()`
 5. **Balance Calculation**: Running balances calculated from transaction history
 6. **Chart Visualization**: `BalanceChart` displays historical balance trends
 7. **Data Persistence**: All data stored locally using SQLite database

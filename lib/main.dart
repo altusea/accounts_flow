@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'services/data_service.dart';
 import 'screens/home_screen.dart';
 import 'utils/logger.dart';
 
@@ -9,9 +8,6 @@ void main() {
   // 初始化日志系统
   AppLogger.initialize();
   AppLogger.info('应用启动中...');
-
-  // 在应用启动时检查是否需要记录本周余额
-  DataService.recordWeeklyBalances();
 
   runApp(const MyApp());
 }

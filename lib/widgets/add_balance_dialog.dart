@@ -33,22 +33,20 @@ class _AddBalanceDialogState extends State<AddBalanceDialog> {
     final accounts = await DataService.getAccounts();
     final history = await DataService.getBalanceHistory();
 
-    // 获取所有周六日期（过去一年内）
+    // 获取所有未记录的日期（过去一年内）
     final now = DateTime.now();
     final oneYearAgo = DateTime(now.year - 1, now.month, now.day);
     final availableDates = <DateTime>[];
 
     var currentDate = oneYearAgo;
     while (currentDate.isBefore(now) || currentDate.isAtSameMomentAs(now)) {
-      if (currentDate.weekday == DateTime.saturday) {
-        // 检查该日期是否已记录
-        final dateString = DateFormat('yyyy-MM-dd').format(currentDate);
-        final isRecorded = history.any((item) =>
-            item.formattedDate == dateString);
+      // 检查该日期是否已记录
+      final dateString = DateFormat('yyyy-MM-dd').format(currentDate);
+      final isRecorded = history.any((item) =>
+          item.formattedDate == dateString);
 
-        if (!isRecorded) {
-          availableDates.add(currentDate);
-        }
+      if (!isRecorded) {
+        availableDates.add(currentDate);
       }
       currentDate = currentDate.add(Duration(days: 1));
     }
@@ -97,7 +95,7 @@ class _AddBalanceDialogState extends State<AddBalanceDialog> {
         height: 100,
         child: Center(
           child: Text(
-            '没有可用的周六日期可记录',
+            '所有日期都已记录过余额',
             style: TextStyle(color: Colors.grey),
           ),
         ),
@@ -130,9 +128,49 @@ class _AddBalanceDialogState extends State<AddBalanceDialog> {
                 border: OutlineInputBorder(),
               ),
               items: _availableDates.map((date) {
+                final isSaturday = date.weekday == DateTime.saturday;
                 return DropdownMenuItem<DateTime>(
                   value: date,
-                  child: Text(DateFormat('yyyy年MM月dd日 (周六)').format(date)),
+                  child: Row(
+                    children: [
+                      Text(DateFormat('yyyy年MM月dd日').format(date)),
+                      SizedBox(width: 8),
+                      if (isSaturday)
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.green[50],
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: Colors.green[200]!),
+                          ),
+                          child: Text(
+                            '周六',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.green[700],
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        )
+                      else
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.orange[50],
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: Colors.orange[200]!),
+                          ),
+                          child: Text(
+                            '非周六',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.orange[700],
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 );
               }).toList(),
               onChanged: (DateTime? newValue) {
@@ -144,6 +182,33 @@ class _AddBalanceDialogState extends State<AddBalanceDialog> {
               },
               validator: (value) => value == null ? '请选择日期' : null,
             ),
+            SizedBox(height: 16),
+
+            // 日期选择警告
+            if (_selectedDate != null && _selectedDate!.weekday != DateTime.saturday)
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange[200]!),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.warning, color: Colors.orange[700], size: 20),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '您选择的是非周六日期。建议在每周六记录余额以保持数据一致性。',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.orange[700],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             SizedBox(height: 16),
 
             // 账户选择
@@ -216,8 +281,40 @@ class _AddBalanceDialogState extends State<AddBalanceDialog> {
         createdAt: DateTime.now(),
       );
 
-      widget.onBalanceAdded(history);
-      Navigator.of(context).pop();
+      // 如果是非周六日期，显示确认对话框
+      if (_selectedDate!.weekday != DateTime.saturday) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('确认记录非周六余额'),
+            content: Text(
+              '您选择的是非周六日期 (${DateFormat('yyyy年MM月dd日').format(_selectedDate!)}). '
+              '建议在每周六记录余额以保持数据一致性。\n\n'
+              '确定要继续记录吗？'
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('取消'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  widget.onBalanceAdded(history);
+                  Navigator.of(context).pop();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                ),
+                child: Text('确定记录'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        widget.onBalanceAdded(history);
+        Navigator.of(context).pop();
+      }
     }
   }
 }

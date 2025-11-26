@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:intl/intl.dart';
 import '../models/account.dart';
 import '../models/balance_history.dart';
@@ -348,10 +347,48 @@ class DataService {
     }
   }
 
+  static Future<void> recordBalancesForDate(DateTime date) async {
+    AppLogger.business('开始为日期 ${DateFormat('yyyy-MM-dd').format(date)} 记录余额');
+    try {
+      final accounts = await getAccounts();
+
+      // 检查该日期是否已经记录过
+      final existingHistory = await getBalanceHistory();
+      final dateString = DateFormat('yyyy-MM-dd').format(date);
+      final alreadyRecorded = existingHistory.any((history) =>
+          history.formattedDate == dateString);
+
+      if (alreadyRecorded) {
+        AppLogger.business('日期 ${dateString} 已经记录过余额，跳过');
+        return;
+      }
+
+      AppLogger.business('开始为 ${accounts.length} 个账户记录余额');
+
+      // 为每个账户记录当前余额
+      for (final account in accounts) {
+        // 获取账户的最新余额（从历史记录中获取）
+        final latestBalance = await getLatestBalanceForAccount(account.id);
+        final history = BalanceHistory(
+          id: '${account.id}_${date.millisecondsSinceEpoch}',
+          accountId: account.id,
+          balance: latestBalance,
+          recordDate: date,
+          createdAt: DateTime.now(),
+        );
+        await addBalanceHistory(history);
+      }
+
+      AppLogger.business('成功为 ${accounts.length} 个账户记录余额');
+    } catch (e, stackTrace) {
+      AppLogger.error('记录余额失败', e, stackTrace);
+      rethrow;
+    }
+  }
+
   static Future<void> recordWeeklyBalances() async {
     AppLogger.business('开始检查是否需要记录本周余额');
     try {
-      final accounts = await getAccounts();
       final today = DateTime.now();
 
       // 只在周六记录
@@ -360,34 +397,7 @@ class DataService {
         return;
       }
 
-      // 检查今天是否已经记录过
-      final existingHistory = await getBalanceHistory();
-      final todayString = DateFormat('yyyy-MM-dd').format(today);
-      final alreadyRecorded = existingHistory.any((history) =>
-          history.formattedDate == todayString);
-
-      if (alreadyRecorded) {
-        AppLogger.business('今天 ${todayString} 已经记录过余额，跳过');
-        return;
-      }
-
-      AppLogger.business('开始为 ${accounts.length} 个账户记录本周余额');
-
-      // 为每个账户记录当前余额
-      for (final account in accounts) {
-        // 获取账户的最新余额（从历史记录中获取）
-        final latestBalance = await getLatestBalanceForAccount(account.id);
-        final history = BalanceHistory(
-          id: '${account.id}_${today.millisecondsSinceEpoch}',
-          accountId: account.id,
-          balance: latestBalance,
-          recordDate: today,
-          createdAt: today,
-        );
-        await addBalanceHistory(history);
-      }
-
-      AppLogger.business('成功为 ${accounts.length} 个账户记录本周余额');
+      await recordBalancesForDate(today);
     } catch (e, stackTrace) {
       AppLogger.error('记录本周余额失败', e, stackTrace);
       rethrow;

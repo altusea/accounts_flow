@@ -23,16 +23,16 @@
 - 多时间段数据对比
 
 ### 🏠 主界面
-- 总资产概览
-- 账户列表快速访问
-- 最近交易记录
-- 直观的用户界面设计
+- 标签页导航（概览、表格、设置）
+- 总资产概览和账户列表
+- 历史余额表格视图
+- 账户管理和应用设置
 
 ### 💾 数据管理
-- 本地数据持久化存储
+- SQLite 数据库本地持久化存储
 - 自动数据备份和恢复
-- JSON 格式数据导入导出
-- 完整的数据加密保护
+- 完整的事务支持保证数据一致性
+- 结构化日志系统用于调试和监控
 
 ## 🚀 快速开始
 
@@ -83,6 +83,12 @@ flutter build web
 # 移动端
 flutter build apk
 flutter build ios
+
+# 构建脚本选项
+./build_macos.sh -c    # 仅清理
+./build_macos.sh -b    # 仅构建
+./build_macos.sh -p    # 仅打包
+./build_macos.sh -a    # 完整流程
 ```
 
 ## 🏗️ 项目架构
@@ -95,16 +101,21 @@ lib/
 │   ├── transaction.dart # 交易模型
 │   └── balance_history.dart # 余额历史
 ├── services/            # 服务层
-│   └── data_service.dart # 数据管理服务
+│   ├── data_service.dart # 数据管理服务
+│   └── database_helper.dart # 数据库管理
 ├── screens/             # 页面
-│   ├── home_screen.dart # 主页面
+│   ├── home_screen.dart # 主页面（标签导航）
 │   ├── account_detail_screen.dart # 账户详情
-│   └── history_screen.dart # 历史记录
+│   ├── history_screen.dart # 历史记录
+│   ├── history_table_screen.dart # 历史表格
+│   └── settings_screen.dart # 设置页面
 ├── widgets/             # 组件
 │   ├── account_card.dart # 账户卡片
 │   ├── balance_chart.dart # 余额图表
 │   ├── add_account_dialog.dart # 添加账户
 │   └── add_transaction_dialog.dart # 添加交易
+├── utils/               # 工具类
+│   └── logger.dart     # 日志系统
 └── main.dart           # 应用入口
 ```
 
@@ -114,9 +125,10 @@ lib/
 - **BalanceHistory**: 周期性余额记录，自动周六追踪
 
 ### 数据持久化
-- 使用 `shared_preferences` 进行本地数据存储
-- JSON 序列化/反序列化保证数据完整性
+- 使用 SQLite (`sqflite`) 进行本地数据存储
+- 数据库事务支持保证数据一致性
 - 自动周度余额记录机制
+- 结构化日志系统用于调试和监控
 
 ## 📦 主要依赖
 
@@ -124,22 +136,31 @@ lib/
 dependencies:
   fl_chart: ^1.1.1          # 数据可视化图表
   intl: ^0.20.2             # 日期格式化和国际化
-  shared_preferences: ^2.4.1 # 本地数据持久化
+  sqflite: ^2.3.0           # SQLite 数据库
+  path: ^1.9.0              # 路径操作工具
+  shared_preferences: ^2.4.2 # 简单键值存储
+  logging: ^1.3.0           # 日志框架
   cupertino_icons: ^1.0.8   # iOS 风格图标
 
 dev_dependencies:
-  flutter_lints: ^5.0.0     # Flutter 代码规范检查
+  flutter_lints: ^6.0.0     # Flutter 代码规范检查
   flutter_test:             # 单元测试框架
 ```
 
 ## 🔄 数据流
 
-1. **账户创建**: 用户通过添加账户对话框创建账户并设置初始余额
-2. **交易记录**: 用户记录收入、支出或转账交易
-3. **余额更新**: 系统自动根据交易更新账户余额
-4. **历史追踪**: 每周六自动记录各账户余额
-5. **图表展示**: 余额图表展示历史趋势和变化
-6. **数据存储**: 所有数据本地持久化存储
+1. **应用初始化**:
+   - 数据库初始化 (`DatabaseHelper`)
+   - 日志系统初始化 (`AppLogger`)
+   - 自动周度余额记录 (`DataService.recordWeeklyBalances()`)
+
+2. **账户创建**: 用户通过添加账户对话框创建账户并设置初始余额
+3. **交易记录**: 用户记录收入、支出或转账交易
+4. **余额更新**: 系统自动根据交易更新账户余额
+5. **历史追踪**: 每周六自动记录各账户余额
+6. **图表展示**: 余额图表展示历史趋势和变化
+7. **表格视图**: 历史余额表格展示多账户数据
+8. **数据存储**: 所有数据通过 SQLite 数据库本地持久化存储
 
 ## 🎨 界面特色
 
@@ -149,11 +170,12 @@ dev_dependencies:
 - **色彩系统**: 自定义账户颜色主题
 - **图表展示**: 丰富的数据可视化效果
 
-## 🔒 数据安全
+## 🔒 数据安全与日志
 
-- 本地数据加密存储
-- 无需网络连接，保护隐私
-- 完整的数据备份和恢复机制
+- SQLite 数据库本地存储，保护隐私
+- 无需网络连接，确保数据安全
+- 完整的事务支持保证数据一致性
+- 结构化日志系统用于调试和监控
 - 用户完全控制自己的财务数据
 
 ## 🛠️ 开发指南
@@ -163,6 +185,7 @@ dev_dependencies:
 - 遵循 Material Design 3 设计模式
 - 实现 `setState` 进行状态管理
 - 使用 async/await 处理异步操作
+- 完整的错误处理和日志记录
 - 所有代码注释使用中文编写
 
 ### 贡献指南

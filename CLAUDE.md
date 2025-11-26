@@ -124,10 +124,19 @@ This is a Flutter personal finance tracking application called "accounts_flow" t
 - **BalanceHistory** (`lib/models/balance_history.dart`): Weekly balance records with automatic Saturday tracking
 
 ### Data Layer
-- **DataService** (`lib/services/data_service.dart`): Singleton service using shared_preferences for local persistence
+- **DataService** (`lib/services/data_service.dart`): Singleton service using SQLite (sqflite) for local persistence
   - Manages accounts, transactions, and balance history storage
   - Automatic weekly balance recording on Saturdays
-  - JSON serialization/deserialization for all data models
+  - Database operations with transaction support
+  - Error handling with comprehensive logging
+
+- **DatabaseHelper** (`lib/services/database_helper.dart`): SQLite database setup and schema management
+  - Creates and manages database tables
+  - Handles database versioning
+
+- **AppLogger** (`lib/utils/logger.dart`): Comprehensive logging system with colored output
+  - Supports multiple log levels (debug, info, warning, error)
+  - Categorized logging for UI, database, and business logic
 
 ### UI Architecture
 - **Platform-specific UI Design**:
@@ -135,9 +144,11 @@ This is a Flutter personal finance tracking application called "accounts_flow" t
   - **macOS**: Cupertino (iOS-style) widgets with native macOS navigation patterns
 
 - **Screens**:
-  - `HomeScreen` (`lib/screens/home_screen.dart`): Main dashboard with total balance, account list, and recent transactions
+  - `HomeScreen` (`lib/screens/home_screen.dart`): Main dashboard with tab navigation (Overview, Table, Settings)
   - `AccountDetailScreen` (`lib/screens/account_detail_screen.dart`): Individual account view with charts and transaction history
   - `HistoryScreen` (`lib/screens/history_screen.dart`): Weekly balance history tracking and visualization
+  - `HistoryTableScreen` (`lib/screens/history_table_screen.dart`): Tabular view of balance history across all accounts
+  - `SettingsScreen` (`lib/screens/settings_screen.dart`): Account management and application settings
 
 - **Widgets**:
   - `AccountCard` (`lib/widgets/account_card.dart`): Reusable card for account display
@@ -148,17 +159,26 @@ This is a Flutter personal finance tracking application called "accounts_flow" t
 ### Key Dependencies
 - `fl_chart: ^1.1.1` - Data visualization charts
 - `intl: ^0.20.2` - Date formatting and localization
-- `shared_preferences: ^2.4.1` - Local data persistence
+- `sqflite: ^2.3.0` - SQLite database for local data persistence
+- `path: ^1.9.0` - Path manipulation utilities
+- `shared_preferences: ^2.4.2` - Simple key-value storage
+- `logging: ^1.3.0` - Logging framework
 - `cupertino_icons: ^1.0.8` - iOS-style icons
 
 ## Data Flow
 
-1. **Account Management**: Users create accounts through `AddAccountDialog` with initial balances
-2. **Transaction Recording**: Users add transactions through `AddTransactionDialog` (income/expense/transfer)
-3. **Automatic Balance Tracking**: `DataService.recordWeeklyBalances()` runs at app startup to record Saturday balances
-4. **Balance Calculation**: Running balances calculated from transaction history
-5. **Chart Visualization**: `BalanceChart` displays historical balance trends
-6. **Data Persistence**: All data stored locally using shared_preferences
+1. **App Initialization**:
+   - Database setup via `DatabaseHelper`
+   - Logging system initialization via `AppLogger`
+   - Automatic weekly balance recording via `DataService.recordWeeklyBalances()`
+
+2. **Account Management**: Users create accounts through `AddAccountDialog` with initial balances
+3. **Transaction Recording**: Users add transactions through `AddTransactionDialog` (income/expense/transfer)
+4. **Automatic Balance Tracking**: `DataService.recordWeeklyBalances()` runs at app startup to record Saturday balances
+5. **Balance Calculation**: Running balances calculated from transaction history
+6. **Chart Visualization**: `BalanceChart` displays historical balance trends
+7. **Data Persistence**: All data stored locally using SQLite database
+8. **Navigation**: Tab-based navigation between Overview, Table, and Settings screens
 
 ## Important Implementation Details
 
@@ -171,9 +191,16 @@ This is a Flutter personal finance tracking application called "accounts_flow" t
 - Account colors stored as ARGB integers for persistence
 - Use `Color.alpha`, `Color.red`, `Color.green`, `Color.blue` for color manipulation
 
-### JSON Serialization
-- All models implement `toJson()` and `fromJson()` methods
-- DataService uses `jsonEncode()` and `jsonDecode()` for storage
+### Database Schema
+- **accounts** table: Stores account information (id, name, type, balance, color, createdAt)
+- **transactions** table: Stores transaction records (id, accountId, type, amount, description, date)
+- **balance_history** table: Stores weekly balance snapshots (id, accountId, balance, date)
+
+### Logging Categories
+- **UI**: User interface interactions and screen navigation
+- **DB**: Database operations and queries
+- **Business**: Core business logic operations
+- **Error**: Exception handling and error conditions
 
 ### Transaction Logic
 - Income: Increases account balance
@@ -189,7 +216,9 @@ This is a Flutter personal finance tracking application called "accounts_flow" t
 - Follows Material Design 3 patterns
 - Implements proper state management with `setState`
 - Uses async/await for data operations
+- Comprehensive error handling with logging
 - All code comments are written in Chinese
+- Structured logging system for debugging and monitoring
 
 ## Development Environment Setup
 

@@ -71,7 +71,7 @@ class _BalanceChartState extends State<BalanceChart> {
     final chartData = _getChartData();
 
     if (chartData.isEmpty) {
-      return Container(
+      return SizedBox(
         height: 200,
         child: Center(
           child: Text(

@@ -53,7 +53,7 @@ class _AddAccountDialogState extends State<AddAccountDialog> {
               ),
               SizedBox(height: 16),
               DropdownButtonFormField<AccountType>(
-                value: _selectedType,
+                initialValue: _selectedType,
                 decoration: InputDecoration(
                   labelText: '账户类型',
                   border: OutlineInputBorder(),

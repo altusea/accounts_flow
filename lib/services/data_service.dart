@@ -359,7 +359,7 @@ class DataService {
           history.formattedDate == dateString);
 
       if (alreadyRecorded) {
-        AppLogger.business('日期 ${dateString} 已经记录过余额，跳过');
+        AppLogger.business('日期 $dateString 已经记录过余额，跳过');
         return;
       }
 

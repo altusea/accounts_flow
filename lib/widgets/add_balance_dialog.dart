@@ -91,7 +91,7 @@ class _AddBalanceDialogState extends State<AddBalanceDialog> {
 
   Widget _buildContent() {
     if (_availableDates.isEmpty) {
-      return Container(
+      return SizedBox(
         height: 100,
         child: Center(
           child: Text(
@@ -103,7 +103,7 @@ class _AddBalanceDialogState extends State<AddBalanceDialog> {
     }
 
     if (_accounts.isEmpty) {
-      return Container(
+      return SizedBox(
         height: 100,
         child: Center(
           child: Text(
@@ -122,7 +122,7 @@ class _AddBalanceDialogState extends State<AddBalanceDialog> {
           children: [
             // 日期选择
             DropdownButtonFormField<DateTime>(
-              value: _selectedDate,
+              initialValue: _selectedDate,
               decoration: InputDecoration(
                 labelText: '记录日期',
                 border: OutlineInputBorder(),
@@ -213,7 +213,7 @@ class _AddBalanceDialogState extends State<AddBalanceDialog> {
 
             // 账户选择
             DropdownButtonFormField<Account>(
-              value: _selectedAccount,
+              initialValue: _selectedAccount,
               decoration: InputDecoration(
                 labelText: '账户',
                 border: OutlineInputBorder(),

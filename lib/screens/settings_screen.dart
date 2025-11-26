@@ -226,8 +226,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       floatingActionButton: FloatingActionButton(
         heroTag: 'add_account_settings',
         onPressed: _showAddAccountDialog,
-        child: Icon(Icons.account_balance_wallet),
         tooltip: '添加账户',
+        child: Icon(Icons.account_balance_wallet),
       ),
     );
   }

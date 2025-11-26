@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(.build_windows.bat:*)"
+      "Bash(.build_windows.ps1:*)",
+      "Bash(./build_macos.sh:*)",
+      "Bash(pod install:*)",
+      "Bash(flutter build:*)"
     ],
     "deny": [],
     "ask": []
